@@ -5,12 +5,21 @@
 #include "running_error.h"
 
 // Write your tests
-TEST_CASE("Addition") {
-  running_error::running_error_t<double> a(0.1, 0.0);
-  running_error::running_error_t<double> b(0.2, 0.0);
+TEST_CASE_TEMPLATE("Addition", T, _Float16, float, double) {
+  running_error::running_error_t<T> a(static_cast<T>(0.1));
+  running_error::running_error_t<T> b(static_cast<T>(0.2));
 
-  SUBCASE("Addition") {
-    running_error::running_error_t<double> c = a + b;
+  SUBCASE("basic ops") {
+    running_error::running_error_t<T> c = a + b;
+    CHECK((c.val - 0.3) <= c.eps * c.val);
+    CHECK(c.error <= c.eps);
+
+    c = a * b;
+    CHECK((c.val - 0.02) <= c.eps * c.val);
+    CHECK(c.error <= c.eps);
+
+    c = a / b;
+    CHECK((c.val - 0.5) <= c.eps * c.val);
     CHECK(c.error <= c.eps);
   }
 }
