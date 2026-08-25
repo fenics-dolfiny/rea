@@ -3,17 +3,30 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
-#include <stdfloat>
 #include <type_traits>
 
-#if __STDCPP_FLOAT64_T__ != 1
-#error "64-bit float type required"
+#if defined(__clang__)
+// Clang does not yet implement the C++23 <stdfloat> fixed-width
+// floating-point types (std::float16_t/float32_t/float64_t).
+namespace std {
+using float16_t = _Float16;
+using float32_t = float;
+using float64_t = double;
+}  // namespace std
+#else
+#include <stdfloat>
 #endif
 
 namespace running_error {
 
 static_assert(std::numeric_limits<std::float64_t>::digits == 53);
+static_assert(sizeof(std::float64_t) == 8);
+
 static_assert(std::numeric_limits<std::float32_t>::digits == 24);
+static_assert(sizeof(std::float32_t) == 4);
+
+// No available mechanism to check the significant width for float16
+static_assert(sizeof(std::float16_t) == 2);
 
 enum class ErrorMode { WORST, EXACT };
 
