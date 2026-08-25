@@ -8,7 +8,8 @@
         "anthropic.claude-code",
         "ms-vscode.cmake-tools",
         "xaver.clang-format",
-        "loopj.vscode-gersemi"
+        "loopj.vscode-gersemi",
+        "ms-vscode.cpptools"
       ],
       "settings": {
         "[json]": {
@@ -24,6 +25,7 @@
           "editor.formatOnSave": true
         },
         "C_Cpp.clang_format_style": "file",
+        "C_Cpp.default.cppStandard": "c++23",
         "[cpp]": {
           "editor.defaultFormatter": "xaver.clang-format",
           "editor.formatOnSave": true

@@ -5,7 +5,7 @@
 #include <limits>
 #include <type_traits>
 
-namespace dolfiny::running_error {
+namespace running_error {
 
 static_assert(std::numeric_limits<double>::digits == 53);
 static_assert(std::numeric_limits<float>::digits == 24);
@@ -802,7 +802,7 @@ re_exact_t<Tag> pow(const re_exact_t<Tag>& x, compute_t<Tag> n) {
                          deriv * x.error + local_error(new_val, exact_val)};
 }
 
-}  // namespace dolfiny::running_error
+}  // namespace running_error
 
 // ---------------------------------------------------------------------------
 // std:: overloads — WORST mode
@@ -811,110 +811,110 @@ re_exact_t<Tag> pow(const re_exact_t<Tag>& x, compute_t<Tag> n) {
 namespace std {
 
 template <typename T>
-using compute_t = dolfiny::running_error::compute_t<T>;
+using compute_t = running_error::compute_t<T>;
 
 template <typename T>
-using re_worst_t = dolfiny::running_error::re_worst_t<T>;
+using re_worst_t = running_error::re_worst_t<T>;
 
 template <typename T>
 re_worst_t<T> abs(const re_worst_t<T>& x) {
-  return dolfiny::running_error::abs(x);
+  return running_error::abs(x);
 }
 
 template <typename T>
 re_worst_t<T> sqrt(const re_worst_t<T>& x) {
-  return dolfiny::running_error::sqrt(x);
+  return running_error::sqrt(x);
 }
 
 template <typename T>
 re_worst_t<T> log(const re_worst_t<T>& x) {
-  return dolfiny::running_error::log(x);
+  return running_error::log(x);
 }
 
 template <typename T>
 re_worst_t<T> sin(const re_worst_t<T>& x) {
-  return dolfiny::running_error::sin(x);
+  return running_error::sin(x);
 }
 
 template <typename T>
 re_worst_t<T> cos(const re_worst_t<T>& x) {
-  return dolfiny::running_error::cos(x);
+  return running_error::cos(x);
 }
 
 template <typename T>
 re_worst_t<T> acos(const re_worst_t<T>& x) {
-  return dolfiny::running_error::acos(x);
+  return running_error::acos(x);
 }
 
 template <typename T>
 re_worst_t<T> fmax(const re_worst_t<T>& a, const re_worst_t<T>& b) {
-  return dolfiny::running_error::fmax(a, b);
+  return running_error::fmax(a, b);
 }
 
 template <typename T>
 re_worst_t<T> fmin(const re_worst_t<T>& a, const re_worst_t<T>& b) {
-  return dolfiny::running_error::fmin(a, b);
+  return running_error::fmin(a, b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
 re_worst_t<T> fmax(const re_worst_t<T>& a, S b) {
-  return dolfiny::running_error::fmax(a, b);
+  return running_error::fmax(a, b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
 re_worst_t<T> fmax(S a, const re_worst_t<T>& b) {
-  return dolfiny::running_error::fmax(a, b);
+  return running_error::fmax(a, b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
 re_worst_t<T> fmin(const re_worst_t<T>& a, S b) {
-  return dolfiny::running_error::fmin(a, b);
+  return running_error::fmin(a, b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
 re_worst_t<T> fmin(S a, const re_worst_t<T>& b) {
-  return dolfiny::running_error::fmin(a, b);
+  return running_error::fmin(a, b);
 }
 
 template <typename T>
 re_worst_t<T> tan(const re_worst_t<T>& x) {
-  return dolfiny::running_error::tan(x);
+  return running_error::tan(x);
 }
 
 template <typename T>
 re_worst_t<T> atan(const re_worst_t<T>& x) {
-  return dolfiny::running_error::atan(x);
+  return running_error::atan(x);
 }
 
 template <typename T>
 re_worst_t<T> atan2(const re_worst_t<T>& y, const re_worst_t<T>& x) {
-  return dolfiny::running_error::atan2(y, x);
+  return running_error::atan2(y, x);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
 re_worst_t<T> atan2(const re_worst_t<T>& y, S x) {
-  return dolfiny::running_error::atan2(y, x);
+  return running_error::atan2(y, x);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
 re_worst_t<T> atan2(S y, const re_worst_t<T>& x) {
-  return dolfiny::running_error::atan2(y, x);
+  return running_error::atan2(y, x);
 }
 
 template <typename T>
 re_worst_t<T> pow(const re_worst_t<T>& x, compute_t<T> n) {
-  return dolfiny::running_error::pow(x, n);
+  return running_error::pow(x, n);
 }
 
 template <typename T>
 re_worst_t<T> pow(const re_worst_t<T>& x, int n) {
-  return dolfiny::running_error::pow(x, n);
+  return running_error::pow(x, n);
 }
 
 // Complex-like interface (val is "real", no imaginary component)
@@ -938,107 +938,107 @@ compute_t<T> norm(const re_worst_t<T>& x) {
 // ---------------------------------------------------------------------------
 
 template <typename T>
-using re_exact_t = dolfiny::running_error::re_exact_t<T>;
+using re_exact_t = running_error::re_exact_t<T>;
 
 template <typename T>
 re_exact_t<T> abs(const re_exact_t<T>& x) {
-  return dolfiny::running_error::abs(x);
+  return running_error::abs(x);
 }
 
 template <typename T>
 re_exact_t<T> sqrt(const re_exact_t<T>& x) {
-  return dolfiny::running_error::sqrt(x);
+  return running_error::sqrt(x);
 }
 
 template <typename T>
 re_exact_t<T> log(const re_exact_t<T>& x) {
-  return dolfiny::running_error::log(x);
+  return running_error::log(x);
 }
 
 template <typename T>
 re_exact_t<T> sin(const re_exact_t<T>& x) {
-  return dolfiny::running_error::sin(x);
+  return running_error::sin(x);
 }
 
 template <typename T>
 re_exact_t<T> cos(const re_exact_t<T>& x) {
-  return dolfiny::running_error::cos(x);
+  return running_error::cos(x);
 }
 
 template <typename T>
 re_exact_t<T> acos(const re_exact_t<T>& x) {
-  return dolfiny::running_error::acos(x);
+  return running_error::acos(x);
 }
 
 template <typename T>
 re_exact_t<T> fmax(const re_exact_t<T>& a, const re_exact_t<T>& b) {
-  return dolfiny::running_error::fmax(a, b);
+  return running_error::fmax(a, b);
 }
 
 template <typename T>
 re_exact_t<T> fmin(const re_exact_t<T>& a, const re_exact_t<T>& b) {
-  return dolfiny::running_error::fmin(a, b);
+  return running_error::fmin(a, b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
 re_exact_t<T> fmax(const re_exact_t<T>& a, S b) {
-  return dolfiny::running_error::fmax(a, b);
+  return running_error::fmax(a, b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
 re_exact_t<T> fmax(S a, const re_exact_t<T>& b) {
-  return dolfiny::running_error::fmax(a, b);
+  return running_error::fmax(a, b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
 re_exact_t<T> fmin(const re_exact_t<T>& a, S b) {
-  return dolfiny::running_error::fmin(a, b);
+  return running_error::fmin(a, b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
 re_exact_t<T> fmin(S a, const re_exact_t<T>& b) {
-  return dolfiny::running_error::fmin(a, b);
+  return running_error::fmin(a, b);
 }
 
 template <typename T>
 re_exact_t<T> tan(const re_exact_t<T>& x) {
-  return dolfiny::running_error::tan(x);
+  return running_error::tan(x);
 }
 
 template <typename T>
 re_exact_t<T> atan(const re_exact_t<T>& x) {
-  return dolfiny::running_error::atan(x);
+  return running_error::atan(x);
 }
 
 template <typename T>
 re_exact_t<T> atan2(const re_exact_t<T>& y, const re_exact_t<T>& x) {
-  return dolfiny::running_error::atan2(y, x);
+  return running_error::atan2(y, x);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
 re_exact_t<T> atan2(const re_exact_t<T>& y, S x) {
-  return dolfiny::running_error::atan2(y, x);
+  return running_error::atan2(y, x);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
 re_exact_t<T> atan2(S y, const re_exact_t<T>& x) {
-  return dolfiny::running_error::atan2(y, x);
+  return running_error::atan2(y, x);
 }
 
 template <typename T>
 re_exact_t<T> pow(const re_exact_t<T>& x, compute_t<T> n) {
-  return dolfiny::running_error::pow(x, n);
+  return running_error::pow(x, n);
 }
 
 template <typename T>
 re_exact_t<T> pow(const re_exact_t<T>& x, int n) {
-  return dolfiny::running_error::pow(x, n);
+  return running_error::pow(x, n);
 }
 
 template <typename T>

@@ -5,4 +5,8 @@ RUN apk add --no-cache \
     clang-extra-tools \
     cmake \
     build-base \
-    ninja
+    ninja \
+    zsh \
+    shadow
+
+RUN chsh -s /bin/zsh root
