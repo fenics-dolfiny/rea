@@ -5,7 +5,8 @@
 #include "running_error.h"
 
 // Write your tests
-TEST_CASE_TEMPLATE("Addition", T, _Float16, float, double) {
+TEST_CASE_TEMPLATE("Addition", T, std::float16_t, std::float32_t,
+                   std::float64_t) {
   running_error::running_error_t<T> a(static_cast<T>(0.1));
   running_error::running_error_t<T> b(static_cast<T>(0.2));
 
