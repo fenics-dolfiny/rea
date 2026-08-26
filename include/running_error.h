@@ -170,10 +170,10 @@ struct running_error_t {
   using re_t = running_error_t;
 
   T val;
-  T error;
+  T err;
 
   constexpr running_error_t(T _val = T(0), T _err = T(0)) noexcept
-      : val(_val), error(_err) {}
+      : val(_val), err(_err) {}
 
   // Construct from a plain arithmetic value.
   // The explicit cast covers narrowing conversions such as
@@ -194,30 +194,30 @@ struct running_error_t {
   // f(a,b) = a + b:  ∂f/∂a = 1, ∂f/∂b = 1
   re_t operator+(const re_t& other) const {
     const T new_val = val + other.val;
-    return re_t{new_val, error + other.error + re_eps<T> * re_abs(new_val)};
+    return re_t{new_val, err + other.err + re_eps<T> * re_abs(new_val)};
   }
 
   // f(a,b) = a - b:  ∂f/∂a = 1, ∂f/∂b = -1
   re_t operator-(const re_t& other) const {
     const T new_val = val - other.val;
-    return re_t{new_val, error + other.error + re_eps<T> * re_abs(new_val)};
+    return re_t{new_val, err + other.err + re_eps<T> * re_abs(new_val)};
   }
 
   // f(a) = -a:  ∂f/∂a = -1 (exact in IEEE 754, no rounding)
-  re_t operator-() const { return re_t{-val, error}; }
+  re_t operator-() const { return re_t{-val, err}; }
 
   // f(a,b) = a * b:  ∂f/∂a = b, ∂f/∂b = a
   re_t operator*(const re_t& other) const {
     const T new_val = val * other.val;
-    return re_t{new_val, re_abs(other.val) * error + re_abs(val) * other.error +
+    return re_t{new_val, re_abs(other.val) * err + re_abs(val) * other.err +
                              re_eps<T> * re_abs(new_val)};
   }
 
   // f(a,b) = a / b:  ∂f/∂a = 1/b, ∂f/∂b = -a/b² = -new_val/b
   re_t operator/(const re_t& other) const {
     const T new_val = val / other.val;
-    return re_t{new_val, error / re_abs(other.val) +
-                             re_abs(new_val / other.val) * other.error +
+    return re_t{new_val, err / re_abs(other.val) +
+                             re_abs(new_val / other.val) * other.err +
                              re_eps<T> * re_abs(new_val)};
   }
 
@@ -241,7 +241,7 @@ struct running_error_t {
   //
 
   bool operator==(const re_t& other) const {
-    return val == other.val && error == other.error;
+    return val == other.val && err == other.err;
   }
   bool operator!=(const re_t& other) const { return !(*this == other); }
 
@@ -270,10 +270,10 @@ struct running_error_t<T, ErrorMode::EXACT> {
                 "type.");
 
   T val;
-  T error;
+  T err;
 
   constexpr running_error_t(T _val = T(0), T _err = T(0)) noexcept
-      : val(_val), error(_err) {}
+      : val(_val), err(_err) {}
 
   // Construct from a plain arithmetic value.
   // The explicit cast covers narrowing conversions such as
@@ -293,31 +293,29 @@ struct running_error_t<T, ErrorMode::EXACT> {
   // f(a,b) = a + b:  ∂f/∂a = 1, ∂f/∂b = 1
   re_t operator+(const re_t& other) const {
     const T new_val = val + other.val;
-    return re_t{new_val,
-                error + other.error + eft_sum(val, other.val, new_val)};
+    return re_t{new_val, err + other.err + eft_sum(val, other.val, new_val)};
   }
 
   // f(a,b) = a - b:  ∂f/∂a = 1, ∂f/∂b = -1
   re_t operator-(const re_t& other) const {
     const T new_val = val - other.val;
-    return re_t{new_val,
-                error - other.error + eft_sum(val, -other.val, new_val)};
+    return re_t{new_val, err - other.err + eft_sum(val, -other.val, new_val)};
   }
 
   // f(a) = -a:  ∂f/∂a = -1 (exact in IEEE 754, no rounding)
-  re_t operator-() const { return re_t{-val, -error}; }
+  re_t operator-() const { return re_t{-val, -err}; }
 
   // f(a,b) = a * b:  ∂f/∂a = b, ∂f/∂b = a
   re_t operator*(const re_t& other) const {
     const T new_val = val * other.val;
-    return re_t{new_val, other.val * error + val * other.error +
+    return re_t{new_val, other.val * err + val * other.err +
                              eft_prod(val, other.val, new_val)};
   }
 
   // f(a,b) = a / b:  ∂f/∂a = 1/b, ∂f/∂b = -a/b² = -new_val/b
   re_t operator/(const re_t& other) const {
     const T new_val = val / other.val;
-    return re_t{new_val, error / other.val - new_val / other.val * other.error +
+    return re_t{new_val, err / other.val - new_val / other.val * other.err +
                              eft_quot(val, other.val, new_val)};
   }
 
@@ -341,7 +339,7 @@ struct running_error_t<T, ErrorMode::EXACT> {
   //
 
   bool operator==(const re_t& other) const {
-    return val == other.val && error == other.error;
+    return val == other.val && err == other.err;
   }
   bool operator!=(const re_t& other) const { return !(*this == other); }
 
@@ -428,7 +426,7 @@ re_worst_t<T> operator/(const re_worst_t<T>& lhs, S rhs) {
 // abs: ∂(abs x)/∂x = sign(x) (exact in IEEE 754)
 template <typename T>
 re_worst_t<T> abs(const re_worst_t<T>& x) {
-  return re_worst_t<T>{re_abs(x.val), x.error};
+  return re_worst_t<T>{re_abs(x.val), x.err};
 }
 
 // sqrt: ∂(√x)/∂x = 1/(2√x)
@@ -436,14 +434,14 @@ template <typename T>
 re_worst_t<T> sqrt(const re_worst_t<T>& x) {
   const T new_val = re_sqrt(x.val);
   return re_worst_t<T>{new_val,
-                       x.error / (2 * new_val) + re_eps<T> * re_abs(new_val)};
+                       x.err / (2 * new_val) + re_eps<T> * re_abs(new_val)};
 }
 
 // log: ∂(ln x)/∂x = 1/x
 template <typename T>
 re_worst_t<T> log(const re_worst_t<T>& x) {
   const T new_val = re_log(x.val);
-  return re_worst_t<T>{new_val, x.error / x.val + re_eps<T> * re_abs(new_val)};
+  return re_worst_t<T>{new_val, x.err / x.val + re_eps<T> * re_abs(new_val)};
 }
 
 // sin: ∂(sin x)/∂x = cos(x)
@@ -451,7 +449,7 @@ template <typename T>
 re_worst_t<T> sin(const re_worst_t<T>& x) {
   const T new_val = re_sin(x.val);
   const T deriv = re_abs(re_cos(x.val));
-  return re_worst_t<T>{new_val, deriv * x.error + re_eps<T> * re_abs(new_val)};
+  return re_worst_t<T>{new_val, deriv * x.err + re_eps<T> * re_abs(new_val)};
 }
 
 // cos: ∂(cos x)/∂x = -sin(x)
@@ -459,7 +457,7 @@ template <typename T>
 re_worst_t<T> cos(const re_worst_t<T>& x) {
   const T new_val = re_cos(x.val);
   const T deriv = re_abs(re_sin(x.val));
-  return re_worst_t<T>{new_val, deriv * x.error + re_eps<T> * re_abs(new_val)};
+  return re_worst_t<T>{new_val, deriv * x.err + re_eps<T> * re_abs(new_val)};
 }
 
 // acos: ∂(acos x)/∂x = -1/√(1 - x²)
@@ -467,7 +465,7 @@ template <typename T>
 re_worst_t<T> acos(const re_worst_t<T>& x) {
   const T new_val = re_acos(x.val);
   const T deriv = 1 / re_sqrt(1 - x.val * x.val);
-  return re_worst_t<T>{new_val, deriv * x.error + re_eps<T> * re_abs(new_val)};
+  return re_worst_t<T>{new_val, deriv * x.err + re_eps<T> * re_abs(new_val)};
 }
 
 // tan: ∂(tan x)/∂x = 1/cos²(x) = 1 + tan²(x), rewritten via new_val to avoid
@@ -476,7 +474,7 @@ template <typename T>
 re_worst_t<T> tan(const re_worst_t<T>& x) {
   const T new_val = re_tan(x.val);
   const T deriv = 1 + new_val * new_val;
-  return re_worst_t<T>{new_val, deriv * x.error + re_eps<T> * re_abs(new_val)};
+  return re_worst_t<T>{new_val, deriv * x.err + re_eps<T> * re_abs(new_val)};
 }
 
 // atan: ∂(atan x)/∂x = 1/(1 + x²)
@@ -484,7 +482,7 @@ template <typename T>
 re_worst_t<T> atan(const re_worst_t<T>& x) {
   const T new_val = re_atan(x.val);
   const T deriv = 1 / (1 + x.val * x.val);
-  return re_worst_t<T>{new_val, deriv * x.error + re_eps<T> * re_abs(new_val)};
+  return re_worst_t<T>{new_val, deriv * x.err + re_eps<T> * re_abs(new_val)};
 }
 
 // atan2(y, x): ∂/∂y = x/(x²+y²), ∂/∂x = -y/(x²+y²)
@@ -492,8 +490,8 @@ template <typename T>
 re_worst_t<T> atan2(const re_worst_t<T>& y, const re_worst_t<T>& x) {
   const T new_val = re_atan2(y.val, x.val);
   const T d = x.val * x.val + y.val * y.val;
-  return re_worst_t<T>{new_val, re_abs(x.val / d) * y.error +
-                                    re_abs(y.val / d) * x.error +
+  return re_worst_t<T>{new_val, re_abs(x.val / d) * y.err +
+                                    re_abs(y.val / d) * x.err +
                                     re_eps<T> * re_abs(new_val)};
 }
 
@@ -550,7 +548,7 @@ template <typename T>
 re_worst_t<T> pow(const re_worst_t<T>& x, T n) {
   const T new_val = re_pow(x.val, n);
   const T deriv = re_abs(n * re_pow(x.val, n - 1));
-  return re_worst_t<T>{new_val, deriv * x.error + re_eps<T> * re_abs(new_val)};
+  return re_worst_t<T>{new_val, deriv * x.err + re_eps<T> * re_abs(new_val)};
 }
 
 template <typename T>
@@ -621,7 +619,7 @@ re_exact_t<T> operator/(const re_exact_t<T>& lhs, S rhs) {
 template <typename T>
 re_exact_t<T> abs(const re_exact_t<T>& x) {
   const T sign = (x.val > T(0)) ? T(1) : (x.val < T(0)) ? T(-1) : T(0);
-  return re_exact_t<T>{re_abs(x.val), sign * x.error};
+  return re_exact_t<T>{re_abs(x.val), sign * x.err};
 }
 
 // sqrt: ∂(√x)/∂x = 1/(2√x)
@@ -632,7 +630,7 @@ re_exact_t<T> sqrt(const re_exact_t<T>& x) {
   const E exact_val = re_sqrt(static_cast<E>(x.val));
   const T deriv = 1 / (2 * new_val);
   return re_exact_t<T>{new_val,
-                       deriv * x.error + local_error(new_val, exact_val)};
+                       deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // log: ∂(ln x)/∂x = 1/x
@@ -643,7 +641,7 @@ re_exact_t<T> log(const re_exact_t<T>& x) {
   const E exact_val = re_log(static_cast<E>(x.val));
   const T deriv = 1 / x.val;
   return re_exact_t<T>{new_val,
-                       deriv * x.error + local_error(new_val, exact_val)};
+                       deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // sin: ∂(sin x)/∂x = cos(x)
@@ -654,7 +652,7 @@ re_exact_t<T> sin(const re_exact_t<T>& x) {
   const E exact_val = re_sin(static_cast<E>(x.val));
   const T deriv = re_cos(x.val);
   return re_exact_t<T>{new_val,
-                       deriv * x.error + local_error(new_val, exact_val)};
+                       deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // cos: ∂(cos x)/∂x = -sin(x)
@@ -665,7 +663,7 @@ re_exact_t<T> cos(const re_exact_t<T>& x) {
   const E exact_val = re_cos(static_cast<E>(x.val));
   const T deriv = -re_sin(x.val);
   return re_exact_t<T>{new_val,
-                       deriv * x.error + local_error(new_val, exact_val)};
+                       deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // acos: ∂(acos x)/∂x = -1/√(1 - x²)
@@ -676,7 +674,7 @@ re_exact_t<T> acos(const re_exact_t<T>& x) {
   const E exact_val = re_acos(static_cast<E>(x.val));
   const T deriv = -1 / re_sqrt(1 - x.val * x.val);
   return re_exact_t<T>{new_val,
-                       deriv * x.error + local_error(new_val, exact_val)};
+                       deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // tan: ∂(tan x)/∂x = 1/cos²(x) = 1 + tan²(x), rewritten via new_val to avoid
@@ -688,7 +686,7 @@ re_exact_t<T> tan(const re_exact_t<T>& x) {
   const E exact_val = re_tan(static_cast<E>(x.val));
   const T deriv = 1 + new_val * new_val;
   return re_exact_t<T>{new_val,
-                       deriv * x.error + local_error(new_val, exact_val)};
+                       deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // atan: ∂(atan x)/∂x = 1/(1 + x²)
@@ -699,7 +697,7 @@ re_exact_t<T> atan(const re_exact_t<T>& x) {
   const E exact_val = re_atan(static_cast<E>(x.val));
   const T deriv = 1 / (1 + x.val * x.val);
   return re_exact_t<T>{new_val,
-                       deriv * x.error + local_error(new_val, exact_val)};
+                       deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // atan2(y, x): ∂/∂y = x/(x²+y²), ∂/∂x = -y/(x²+y²)
@@ -709,7 +707,7 @@ re_exact_t<T> atan2(const re_exact_t<T>& y, const re_exact_t<T>& x) {
   const T new_val = re_atan2(y.val, x.val);
   const E exact_val = re_atan2(static_cast<E>(y.val), static_cast<E>(x.val));
   const T d = x.val * x.val + y.val * y.val;
-  return re_exact_t<T>{new_val, (x.val / d) * y.error - (y.val / d) * x.error +
+  return re_exact_t<T>{new_val, (x.val / d) * y.err - (y.val / d) * x.err +
                                     local_error(new_val, exact_val)};
 }
 
@@ -769,7 +767,7 @@ re_exact_t<T> pow(const re_exact_t<T>& x, T n) {
   const E exact_val = re_pow(static_cast<E>(x.val), static_cast<E>(n));
   const T deriv = n * re_pow(x.val, n - 1);
   return re_exact_t<T>{new_val,
-                       deriv * x.error + local_error(new_val, exact_val)};
+                       deriv * x.err + local_error(new_val, exact_val)};
 }
 
 }  // namespace running_error

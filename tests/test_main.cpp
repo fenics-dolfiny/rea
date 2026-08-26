@@ -13,14 +13,14 @@ TEST_CASE_TEMPLATE("Addition", T, std::float16_t, std::float32_t,
   SUBCASE("basic ops") {
     running_error::running_error_t<T> c = a + b;
     CHECK((c.val - 0.3) <= c.eps * c.val);
-    CHECK(c.error <= c.eps);
+    CHECK(c.err <= c.eps);
 
     c = a * b;
     CHECK((c.val - 0.02) <= c.eps * c.val);
-    CHECK(c.error <= c.eps);
+    CHECK(c.err <= c.eps);
 
     c = a / b;
     CHECK((c.val - 0.5) <= c.eps * c.val);
-    CHECK(c.error <= c.eps);
+    CHECK(c.err <= c.eps);
   }
 }
