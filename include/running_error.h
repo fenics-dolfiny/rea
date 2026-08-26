@@ -203,7 +203,7 @@ struct running_error_t {
     return re_t{new_val, error + other.error + re_eps<T> * re_abs(new_val)};
   }
 
-  // Negation is exact in IEEE 754 (sign bit flip, no rounding).
+  // f(a) = -a:  ∂f/∂a = -1 (exact in IEEE 754, no rounding)
   re_t operator-() const { return re_t{-val, error}; }
 
   // f(a,b) = a * b:  ∂f/∂a = b, ∂f/∂b = a
@@ -304,7 +304,7 @@ struct running_error_t<T, ErrorMode::EXACT> {
                 error - other.error + eft_sum(val, -other.val, new_val)};
   }
 
-  // Negation is exact in IEEE 754: ∂(-a)/∂a = -1, no local rounding.
+  // f(a) = -a:  ∂f/∂a = -1 (exact in IEEE 754, no rounding)
   re_t operator-() const { return re_t{-val, -error}; }
 
   // f(a,b) = a * b:  ∂f/∂a = b, ∂f/∂b = a
@@ -425,13 +425,13 @@ re_worst_t<T> operator/(const re_worst_t<T>& lhs, S rhs) {
   return lhs / re_worst_t<T>(rhs);
 }
 
-// Absolute value adds no error, just flips the sign bit if negative.
+// abs: ∂(abs x)/∂x = sign(x) (exact in IEEE 754)
 template <typename T>
 re_worst_t<T> abs(const re_worst_t<T>& x) {
   return re_worst_t<T>{re_abs(x.val), x.error};
 }
 
-// sqrt: dy/dx = 1/(2*sqrt(x))
+// sqrt: ∂(√x)/∂x = 1/(2√x)
 template <typename T>
 re_worst_t<T> sqrt(const re_worst_t<T>& x) {
   const T new_val = re_sqrt(x.val);
@@ -439,14 +439,14 @@ re_worst_t<T> sqrt(const re_worst_t<T>& x) {
                        x.error / (2 * new_val) + re_eps<T> * re_abs(new_val)};
 }
 
-// log: dy/dx = 1/x
+// log: ∂(ln x)/∂x = 1/x
 template <typename T>
 re_worst_t<T> log(const re_worst_t<T>& x) {
   const T new_val = re_log(x.val);
   return re_worst_t<T>{new_val, x.error / x.val + re_eps<T> * re_abs(new_val)};
 }
 
-// sin: dy/dx = cos(x)
+// sin: ∂(sin x)/∂x = cos(x)
 template <typename T>
 re_worst_t<T> sin(const re_worst_t<T>& x) {
   const T new_val = re_sin(x.val);
@@ -454,7 +454,7 @@ re_worst_t<T> sin(const re_worst_t<T>& x) {
   return re_worst_t<T>{new_val, deriv * x.error + re_eps<T> * re_abs(new_val)};
 }
 
-// cos: dy/dx = -sin(x)
+// cos: ∂(cos x)/∂x = -sin(x)
 template <typename T>
 re_worst_t<T> cos(const re_worst_t<T>& x) {
   const T new_val = re_cos(x.val);
@@ -462,7 +462,7 @@ re_worst_t<T> cos(const re_worst_t<T>& x) {
   return re_worst_t<T>{new_val, deriv * x.error + re_eps<T> * re_abs(new_val)};
 }
 
-// acos: dy/dx = -1/sqrt(1 - x²)
+// acos: ∂(acos x)/∂x = -1/√(1 - x²)
 template <typename T>
 re_worst_t<T> acos(const re_worst_t<T>& x) {
   const T new_val = re_acos(x.val);
@@ -470,8 +470,8 @@ re_worst_t<T> acos(const re_worst_t<T>& x) {
   return re_worst_t<T>{new_val, deriv * x.error + re_eps<T> * re_abs(new_val)};
 }
 
-// tan: dy/dx = 1/cos²(x) = 1 + tan²(x), rewritten via new_val to avoid a
-// second std::cos call.
+// tan: ∂(tan x)/∂x = 1/cos²(x) = 1 + tan²(x), rewritten via new_val to avoid
+// a second std::cos call.
 template <typename T>
 re_worst_t<T> tan(const re_worst_t<T>& x) {
   const T new_val = re_tan(x.val);
@@ -479,7 +479,7 @@ re_worst_t<T> tan(const re_worst_t<T>& x) {
   return re_worst_t<T>{new_val, deriv * x.error + re_eps<T> * re_abs(new_val)};
 }
 
-// atan: dy/dx = 1/(1 + x²)
+// atan: ∂(atan x)/∂x = 1/(1 + x²)
 template <typename T>
 re_worst_t<T> atan(const re_worst_t<T>& x) {
   const T new_val = re_atan(x.val);
@@ -545,7 +545,7 @@ re_worst_t<T> fmin(S a, const re_worst_t<T>& b) {
   return fmin(re_worst_t<T>(a), b);
 }
 
-// pow(x, n): dy/dx = n*x^(n-1)
+// pow(x, n): ∂(x^n)/∂x = n*x^(n-1)
 template <typename T>
 re_worst_t<T> pow(const re_worst_t<T>& x, T n) {
   const T new_val = re_pow(x.val, n);
@@ -617,7 +617,7 @@ re_exact_t<T> operator/(const re_exact_t<T>& lhs, S rhs) {
   return lhs / re_exact_t<T>(rhs);
 }
 
-// abs is exact in IEEE 754, derivative = sign(val)
+// abs: ∂(abs x)/∂x = sign(x) (exact in IEEE 754)
 template <typename T>
 re_exact_t<T> abs(const re_exact_t<T>& x) {
   const T sign = (x.val > T(0)) ? T(1) : (x.val < T(0)) ? T(-1) : T(0);
@@ -668,7 +668,7 @@ re_exact_t<T> cos(const re_exact_t<T>& x) {
                        deriv * x.error + local_error(new_val, exact_val)};
 }
 
-// acos: ∂(acos x)/∂x = -1/sqrt(1 - x²)
+// acos: ∂(acos x)/∂x = -1/√(1 - x²)
 template <typename T>
 re_exact_t<T> acos(const re_exact_t<T>& x) {
   using E = exact_type_t<T>;
@@ -679,7 +679,8 @@ re_exact_t<T> acos(const re_exact_t<T>& x) {
                        deriv * x.error + local_error(new_val, exact_val)};
 }
 
-// tan: ∂(tan x)/∂x = 1/cos²(x) = 1 + tan²(x)
+// tan: ∂(tan x)/∂x = 1/cos²(x) = 1 + tan²(x), rewritten via new_val to avoid
+// a second std::cos call.
 template <typename T>
 re_exact_t<T> tan(const re_exact_t<T>& x) {
   using E = exact_type_t<T>;
@@ -725,7 +726,7 @@ re_exact_t<T> atan2(S y, const re_exact_t<T>& x) {
 }
 
 // fmax / fmin: exact selection of one operand; no rounding is introduced, and
-// the chosen operand's accumulated error carries through unchanged.
+// the chosen operand's error carries through unchanged.
 template <typename T>
 re_exact_t<T> fmax(const re_exact_t<T>& a, const re_exact_t<T>& b) {
   return (b.val > a.val) ? b : a;
@@ -760,7 +761,7 @@ re_exact_t<T> fmin(S a, const re_exact_t<T>& b) {
   return fmin(re_exact_t<T>(a), b);
 }
 
-// pow(x, n): ∂(x^n)/∂x = n*x^(n-1), signed
+// pow(x, n): ∂(x^n)/∂x = n*x^(n-1)
 template <typename T>
 re_exact_t<T> pow(const re_exact_t<T>& x, T n) {
   using E = exact_type_t<T>;
