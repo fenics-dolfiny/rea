@@ -240,9 +240,7 @@ struct running_error_t {
   // Comparison operators
   //
 
-  bool operator==(const re_t& other) const {
-    return val == other.val && err == other.err;
-  }
+  bool operator==(const re_t& other) const { return val == other.val; }
   bool operator!=(const re_t& other) const { return !(*this == other); }
 
   // Note: this is the machine epsilon (e.g. 2^-52 for std::float64_t), i.e.
@@ -251,6 +249,19 @@ struct running_error_t {
   // the bound a safe (conservative) upper bound.
   static constexpr T eps = re_eps<T>;
 };
+
+// comparison operations compare the value (not the error).
+template <typename T, ErrorMode M>
+bool operator<=(const running_error_t<T, M>& lhs,
+                const running_error_t<T, M>& other) noexcept {
+  return lhs.val <= other.val;
+}
+
+template <typename T, ErrorMode M>
+bool operator>=(const running_error_t<T, M>& lhs,
+                const running_error_t<T, M>& other) noexcept {
+  return lhs.val >= other.val;
+}
 
 // ---------------------------------------------------------------------------
 // EXACT mode: signed accumulated error via first-order derivative propagation.
@@ -338,9 +349,7 @@ struct running_error_t<T, ErrorMode::EXACT> {
   // Comparison operators
   //
 
-  bool operator==(const re_t& other) const {
-    return val == other.val && err == other.err;
-  }
+  bool operator==(const re_t& other) const { return val == other.val; }
   bool operator!=(const re_t& other) const { return !(*this == other); }
 
   // Machine epsilon of the value type, provided for parity with WORST mode.
