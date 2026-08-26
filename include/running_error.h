@@ -770,6 +770,11 @@ re_exact_t<T> pow(const re_exact_t<T>& x, T n) {
                        deriv * x.err + local_error(new_val, exact_val)};
 }
 
+template <typename T>
+re_exact_t<T> pow(const re_exact_t<T>& x, int n) {
+  return pow(x, static_cast<T>(n));
+}
+
 }  // namespace running_error
 
 // ---------------------------------------------------------------------------
