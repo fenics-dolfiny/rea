@@ -1,0 +1,7 @@
+test:
+  image: alpine:edge
+  script:
+    - ./install-deps.sh
+    - cmake -S . -B build
+    - cmake --build build
+    - ./build/rea_tests
