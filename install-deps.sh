@@ -1,6 +1,7 @@
-FROM alpine:edge
+#!/usr/bin/env bash
+set -euo pipefail
 
-RUN apk add --no-cache \
+apk add --no-cache \
     clang \
     clang-extra-tools \
     cmake \
@@ -8,5 +9,3 @@ RUN apk add --no-cache \
     ninja \
     zsh \
     shadow
-
-RUN chsh -s /bin/zsh root

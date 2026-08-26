@@ -38,11 +38,8 @@
       }
     }
   },
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".",
-    "options": ["--progress", "plain"]
-  },
+  "image": "alpine:edge",
+  "onCreateCommand": "./install-deps.sh",
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2.5.9": {}
   }
