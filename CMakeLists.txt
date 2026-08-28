@@ -21,6 +21,22 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
     add_executable(${PROJECT_NAME}_tests tests/test_main.cpp)
     target_link_libraries(${PROJECT_NAME}_tests PRIVATE ${PROJECT_NAME})
-    
+
+    target_compile_options(
+        ${PROJECT_NAME}_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+            -Wshadow
+            -Wconversion
+            -Wsign-conversion
+            -Wdouble-promotion
+            -Wold-style-cast
+            -Wcast-align
+            -Werror
+    )
+
+
     add_test(NAME RunAllTests COMMAND ${PROJECT_NAME}_tests)
 endif()

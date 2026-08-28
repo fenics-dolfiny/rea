@@ -1,5 +1,10 @@
 #pragma once
 
+// std::float16_t and friends, and the <stdfloat> they live in, are C++23.
+#if !defined(__cplusplus) || __cplusplus < 202302L
+#error "running_error.h requires C++23 or newer"
+#endif
+
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -125,6 +130,14 @@ inline V re_fma(V x, V y, V z) {
 }
 template <typename T>
 inline constexpr T re_eps = std::numeric_limits<T>::epsilon();
+
+// Clang does not specialize numeric_limits for _Float16: epsilon() comes back
+// 0, silently dropping the local rounding term. binary16 has 11 bits.
+template <>
+inline constexpr std::float16_t re_eps<std::float16_t> =
+    std::numeric_limits<std::float16_t>::is_specialized
+        ? std::numeric_limits<std::float16_t>::epsilon()
+        : static_cast<std::float16_t>(0x1p-10);
 
 // Error of representing `val` in precision `T`, signed as computed - true.
 // Subtracting in S, the wider type, is exact before rounding into T.
@@ -377,6 +390,26 @@ static_assert(sizeof(re_exact_t<std::float32_t>) == 8 &&
               alignof(re_exact_t<std::float32_t>) == 4);
 
 // ---------------------------------------------------------------------------
+// Integer powers — shared by both modes
+//
+// Repeated products keep integer exponents off the libm and exact_type path.
+// pow(x, 3) is x*x*x, not a library call, so it may differ in the last bit.
+// ---------------------------------------------------------------------------
+
+template <typename T, ErrorMode M>
+running_error_t<T, M> integer_pow(const running_error_t<T, M>& x, int n) {
+  using re_t = running_error_t<T, M>;
+
+  if (n < 0) return re_t{T(1), T(0)} / integer_pow(x, -n);
+  if (n == 0) return re_t{T(1), T(0)};
+
+  // Seed with x: 1 * x would cost a rounding in WORST mode.
+  re_t result = x;
+  for (int i = 1; i < n; ++i) result = result * x;
+  return result;
+}
+
+// ---------------------------------------------------------------------------
 // Free functions — WORST mode
 //
 // Free functions are used for inhomogeneous operations and to allow math
@@ -562,7 +595,7 @@ re_worst_t<T> pow(const re_worst_t<T>& x, T n) {
 
 template <typename T>
 re_worst_t<T> pow(const re_worst_t<T>& x, int n) {
-  return pow(x, static_cast<T>(n));
+  return integer_pow(x, n);
 }
 
 // ---------------------------------------------------------------------------
@@ -781,7 +814,7 @@ re_exact_t<T> pow(const re_exact_t<T>& x, T n) {
 
 template <typename T>
 re_exact_t<T> pow(const re_exact_t<T>& x, int n) {
-  return pow(x, static_cast<T>(n));
+  return integer_pow(x, n);
 }
 
 }  // namespace running_error
