@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it."
+type: software
+title: "Running Error Analysis library"
+version: "0.1.0"
+authors:
+  - family-names: "Habera"
+    given-names: "Michal"
+  - family-names: "Kühner"
+    given-names: "Paul, T."
+  - family-names: "Croci"
+    given-names: "Matteo"
+  - family-names: "Zilian"
+    given-names: "Andreas"
