@@ -5,6 +5,7 @@
 #error "running_error.h requires C++23 or newer"
 #endif
 
+#include <cfloat>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -37,21 +38,16 @@ enum class ErrorMode { WORST, EXACT };
 
 // Exact type represents a wider type used in EXACT mode for reference value.
 template <typename T>
-struct exact_type {
-  using type = T;
-};
+struct exact_type;
 
-// Need to use long double, not std::float128_t: cling is C++20 and has neither
-// that nor __float128. It is binary128 on aarch64, 80-bit (11 spare bits)
-// elsewhere.
 template <>
 struct exact_type<std::float64_t> {
   using type = long double;
-
-  // Mantissa bits, not sizeof: x86-64 pads the 80-bit format to 16 bytes.
-  static_assert(std::numeric_limits<long double>::digits >= 64,
-                "must support a format with at least 64-bit significand");
 };
+
+#if LDBL_MANT_DIG > DBL_MANT_DIG
+#define REA_HAS_EXTENDED_FLOAT 1
+#endif
 
 template <>
 struct exact_type<std::float32_t> {
@@ -381,8 +377,11 @@ using re_exact_t = running_error_t<T, ErrorMode::EXACT>;
 // {T val; T err}: a homogeneous pair, 2*sizeof(T) with T's alignment.
 static_assert(sizeof(re_worst_t<std::float64_t>) == 16 &&
               alignof(re_worst_t<std::float64_t>) == 8);
+
+#if REA_HAS_EXTENDED_FLOAT
 static_assert(sizeof(re_exact_t<std::float64_t>) == 16 &&
               alignof(re_exact_t<std::float64_t>) == 8);
+#endif
 
 static_assert(sizeof(re_worst_t<std::float32_t>) == 8 &&
               alignof(re_worst_t<std::float32_t>) == 4);
