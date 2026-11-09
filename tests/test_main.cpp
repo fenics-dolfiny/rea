@@ -7,7 +7,7 @@
 #include "doctest.h"
 #include "running_error.h"
 
-using running_error::re_exact_t;
+using running_error::re_signed_t;
 using running_error::re_worst_t;
 
 namespace {
@@ -35,7 +35,7 @@ void check_worst(const re_worst_t<T>& c, L exact) {
 // err is signed (computed - exact), so val - err recovers the exact result, up
 // to second-order terms and the resolution of the reference type.
 template <typename T>
-void check_exact(const re_exact_t<T>& c, L exact) {
+void check_exact(const re_signed_t<T>& c, L exact) {
   using E = running_error::exact_type_t<T>;
   const L tol =
       10 * std::max(eps_of<T>() * eps_of<T>(), eps_of<E>()) * std::fabs(exact);
@@ -45,7 +45,7 @@ void check_exact(const re_exact_t<T>& c, L exact) {
 // The same operation in both modes, against one reference: the bound has to
 // cover it, the signed error has to recover it.
 template <typename T>
-void check(const re_worst_t<T>& w, const re_exact_t<T>& e, L exact) {
+void check(const re_worst_t<T>& w, const re_signed_t<T>& e, L exact) {
   check_worst(w, exact);
   check_exact(e, exact);
 }
@@ -69,18 +69,18 @@ TEST_CASE_TEMPLATE("Arithmetic operators", T, std::float16_t, std::float32_t,
   static_assert(
       std::is_same_v<running_error::running_error_t<T>, re_worst_t<T>>);
   CHECK(wide(re_worst_t<T>::eps) == eps_of<T>());
-  CHECK(wide(re_exact_t<T>::eps) == eps_of<T>());
+  CHECK(wide(re_signed_t<T>::eps) == eps_of<T>());
 
   // A value already in T is its own exact representation.
   CHECK(wide(re_worst_t<T>(static_cast<T>(0.1)).err) == L(0));
-  CHECK(wide(re_exact_t<T>(static_cast<T>(0.1)).err) == L(0));
+  CHECK(wide(re_signed_t<T>(static_cast<T>(0.1)).err) == L(0));
 
   // The seeded error is relative to the double the object was built from, so
   // the reference is that same double widened, not the decimal literal.
   const double da = 0.1, db = 0.2;
   const L ra = wide(da), rb = wide(db);
   re_worst_t<T> aw(da), bw(db);
-  re_exact_t<T> ae(da), be(db);
+  re_signed_t<T> ae(da), be(db);
 
   CHECK_BOTH(a, ra);
   CHECK_BOTH(a + b, ra + rb);
@@ -97,7 +97,7 @@ TEST_CASE_TEMPLATE("Arithmetic operators", T, std::float16_t, std::float32_t,
 
   SUBCASE("compound assignment") {
     re_worst_t<T> cw = aw;
-    re_exact_t<T> ce = ae;
+    re_signed_t<T> ce = ae;
     cw += bw;
     ce += be;
     check(cw, ce, ra + rb);
@@ -144,34 +144,35 @@ TEST_CASE_TEMPLATE("Arithmetic operators", T, std::float16_t, std::float32_t,
   }
 }
 
-// Only EXACT mode has error-free transformations; WORST just adds an eps term.
-TEST_CASE_TEMPLATE("Error-free transformations - EXACT", T, std::float16_t,
+// Only SIGNED mode has error-free transformations; WORST just adds an eps term.
+TEST_CASE_TEMPLATE("Error-free transformations - SIGNED", T, std::float16_t,
                    std::float32_t, std::float64_t) {
   const L eps = eps_of<T>();
   const T one = static_cast<T>(1);
   const T half_eps = static_cast<T>(running_error::re_eps<T> / 2);
 
   // 1 + eps/2 rounds to 1, losing the whole addend; eft_sum recovers it.
-  const re_exact_t<T> s =
-      re_exact_t<T>(one, T(0)) + re_exact_t<T>(half_eps, T(0));
+  const re_signed_t<T> s =
+      re_signed_t<T>(one, T(0)) + re_signed_t<T>(half_eps, T(0));
   CHECK(wide(s.val) == L(1));
   CHECK(wide(s.val) - wide(s.err) == 1 + eps / 2);
 
   // 1 - eps/2 is representable: nothing lost, no error reported.
-  const re_exact_t<T> d =
-      re_exact_t<T>(one, T(0)) - re_exact_t<T>(half_eps, T(0));
+  const re_signed_t<T> d =
+      re_signed_t<T>(one, T(0)) - re_signed_t<T>(half_eps, T(0));
   CHECK(wide(d.val) == 1 - eps / 2);
   CHECK(wide(d.err) == L(0));
 
   // (1 + eps)^2 rounds to 1 + 2eps; eft_prod returns the dropped eps^2.
   const T u = static_cast<T>(1 + eps);
-  const re_exact_t<T> p = re_exact_t<T>(u, T(0)) * re_exact_t<T>(u, T(0));
+  const re_signed_t<T> p = re_signed_t<T>(u, T(0)) * re_signed_t<T>(u, T(0));
   CHECK(wide(p.val) == 1 + 2 * eps);
   CHECK(wide(p.err) == -eps * eps);
 
   // 1/3 is representable in no binary format; eft_quot rounds once.
-  check_exact(re_exact_t<T>(one, T(0)) / re_exact_t<T>(static_cast<T>(3), T(0)),
-              L(1) / L(3));
+  check_exact(
+      re_signed_t<T>(one, T(0)) / re_signed_t<T>(static_cast<T>(3), T(0)),
+      L(1) / L(3));
 }
 
 TEST_CASE_TEMPLATE("Math functions", T, std::float16_t, std::float32_t,
@@ -179,7 +180,7 @@ TEST_CASE_TEMPLATE("Math functions", T, std::float16_t, std::float32_t,
   const double da = 0.5, db = 0.1;
   const L ra = wide(da), rb = wide(db);
   re_worst_t<T> aw(da), bw(db);
-  re_exact_t<T> ae(da), be(db);
+  re_signed_t<T> ae(da), be(db);
 
   // Unqualified calls resolve by ADL, std:: ones through the header overloads.
   CHECK_BOTH(abs(-b), rb);
@@ -205,7 +206,7 @@ TEST_CASE_TEMPLATE("Integer powers are products", T, std::float16_t,
   const double dx = 0.1;
   const L rx = wide(dx);
   re_worst_t<T> xw(dx);
-  re_exact_t<T> xe(dx);
+  re_signed_t<T> xe(dx);
 
   // x^0 is exactly 1, with nothing accumulated.
   CHECK(wide(pow(xw, 0).val) == L(1));
@@ -235,7 +236,7 @@ TEST_CASE_TEMPLATE("Integer powers are products", T, std::float16_t,
 TEST_CASE_TEMPLATE("fmax / fmin and comparisons", T, std::float16_t,
                    std::float32_t, std::float64_t) {
   re_worst_t<T> aw(0.1), bw(0.2);
-  re_exact_t<T> ae(0.1), be(0.2);
+  re_signed_t<T> ae(0.1), be(0.2);
 
   // One operand is selected whole, error and all.
   CHECK(wide(fmax(aw, bw).err) == wide(bw.err));
@@ -267,7 +268,7 @@ TEST_CASE_TEMPLATE("fmax / fmin and comparisons", T, std::float16_t,
 TEST_CASE_TEMPLATE("Complex-like interface", T, std::float16_t, std::float32_t,
                    std::float64_t) {
   re_worst_t<T> w(0.5);
-  re_exact_t<T> e(0.5);
+  re_signed_t<T> e(0.5);
 
   CHECK(wide(std::real(w)) == wide(w.val));
   CHECK(wide(std::real(e)) == wide(e.val));
@@ -277,17 +278,17 @@ TEST_CASE_TEMPLATE("Complex-like interface", T, std::float16_t, std::float32_t,
   CHECK(wide(std::norm(e)) == L(0.25));
 }
 
-TEST_CASE_TEMPLATE("The WORST bound covers the EXACT error", T, std::float16_t,
+TEST_CASE_TEMPLATE("The WORST bound covers the SIGNED error", T, std::float16_t,
                    std::float32_t, std::float64_t) {
   const double da = 0.1, db = 0.2;
   const L ra = wide(da), rb = wide(db);
 
   re_worst_t<T> aw(da), bw(db);
-  re_exact_t<T> ae(da), be(db);
+  re_signed_t<T> ae(da), be(db);
 
   // Values agree bit for bit; the signed error never exceeds the bound.
   const re_worst_t<T> w = aw * bw + aw / bw - aw;
-  const re_exact_t<T> x = ae * be + ae / be - ae;
+  const re_signed_t<T> x = ae * be + ae / be - ae;
   const L exact = ra * rb + ra / rb - ra;
 
   CHECK(wide(w.val) == wide(x.val));
