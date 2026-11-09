@@ -34,9 +34,9 @@ static_assert(sizeof(std::float32_t) == 4);
 // No available mechanism to check the significant width for float16
 static_assert(sizeof(std::float16_t) == 2);
 
-enum class ErrorMode { WORST, EXACT };
+enum class ErrorMode { WORST, SIGNED };
 
-// Exact type represents a wider type used in EXACT mode for reference value.
+// Exact type represents a wider type used in SIGNED mode for reference value.
 template <typename T>
 struct exact_type;
 
@@ -273,20 +273,20 @@ bool operator>=(const running_error_t<T, M>& lhs,
 }
 
 // ---------------------------------------------------------------------------
-// EXACT mode: signed accumulated error via first-order derivative propagation.
-//             Local rounding is exact for + - * / (error-free transformations)
-//             and computed in the wider exact_type for the math functions.
+// SIGNED mode: signed accumulated error via first-order derivative propagation.
+//              Local rounding is exact for + - * / (error-free transformations)
+//              and computed in the wider exact_type for the math functions.
 // ---------------------------------------------------------------------------
 
 template <typename T>
-struct running_error_t<T, ErrorMode::EXACT> {
+struct running_error_t<T, ErrorMode::SIGNED> {
   using E = exact_type_t<T>;
   using re_t = running_error_t;
 
   // Without a strictly wider reference the local rounding is identically zero,
   // which would report a flawless computation rather than fail.
   static_assert(std::numeric_limits<E>::digits > std::numeric_limits<T>::digits,
-                "ErrorMode::EXACT needs an exact_type wider than the compute "
+                "ErrorMode::SIGNED needs an exact_type wider than the compute "
                 "type.");
 
   T val;
@@ -372,21 +372,21 @@ struct running_error_t<T, ErrorMode::EXACT> {
 template <typename T>
 using re_worst_t = running_error_t<T, ErrorMode::WORST>;
 template <typename T>
-using re_exact_t = running_error_t<T, ErrorMode::EXACT>;
+using re_signed_t = running_error_t<T, ErrorMode::SIGNED>;
 
 // {T val; T err}: a homogeneous pair, 2*sizeof(T) with T's alignment.
 static_assert(sizeof(re_worst_t<std::float64_t>) == 16 &&
               alignof(re_worst_t<std::float64_t>) == 8);
 
 #if REA_HAS_EXTENDED_FLOAT
-static_assert(sizeof(re_exact_t<std::float64_t>) == 16 &&
-              alignof(re_exact_t<std::float64_t>) == 8);
+static_assert(sizeof(re_signed_t<std::float64_t>) == 16 &&
+              alignof(re_signed_t<std::float64_t>) == 8);
 #endif
 
 static_assert(sizeof(re_worst_t<std::float32_t>) == 8 &&
               alignof(re_worst_t<std::float32_t>) == 4);
-static_assert(sizeof(re_exact_t<std::float32_t>) == 8 &&
-              alignof(re_exact_t<std::float32_t>) == 4);
+static_assert(sizeof(re_signed_t<std::float32_t>) == 8 &&
+              alignof(re_signed_t<std::float32_t>) == 4);
 
 // ---------------------------------------------------------------------------
 // Integer powers — shared by both modes
@@ -598,7 +598,7 @@ re_worst_t<T> pow(const re_worst_t<T>& x, int n) {
 }
 
 // ---------------------------------------------------------------------------
-// Free functions — EXACT mode
+// Free functions — SIGNED mode
 //
 // Free functions are used for inhomogeneous operations and to allow ADL-based
 // math function overloading.
@@ -610,209 +610,209 @@ re_worst_t<T> pow(const re_worst_t<T>& x, int n) {
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> operator*(S lhs, const re_exact_t<T>& rhs) {
-  return re_exact_t<T>(lhs) * rhs;
+re_signed_t<T> operator*(S lhs, const re_signed_t<T>& rhs) {
+  return re_signed_t<T>(lhs) * rhs;
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> operator*(const re_exact_t<T>& lhs, S rhs) {
-  return lhs * re_exact_t<T>(rhs);
+re_signed_t<T> operator*(const re_signed_t<T>& lhs, S rhs) {
+  return lhs * re_signed_t<T>(rhs);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> operator+(S lhs, const re_exact_t<T>& rhs) {
-  return re_exact_t<T>(lhs) + rhs;
+re_signed_t<T> operator+(S lhs, const re_signed_t<T>& rhs) {
+  return re_signed_t<T>(lhs) + rhs;
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> operator+(const re_exact_t<T>& lhs, S rhs) {
-  return lhs + re_exact_t<T>(rhs);
+re_signed_t<T> operator+(const re_signed_t<T>& lhs, S rhs) {
+  return lhs + re_signed_t<T>(rhs);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> operator-(S lhs, const re_exact_t<T>& rhs) {
-  return re_exact_t<T>(lhs) - rhs;
+re_signed_t<T> operator-(S lhs, const re_signed_t<T>& rhs) {
+  return re_signed_t<T>(lhs) - rhs;
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> operator-(const re_exact_t<T>& lhs, S rhs) {
-  return lhs - re_exact_t<T>(rhs);
+re_signed_t<T> operator-(const re_signed_t<T>& lhs, S rhs) {
+  return lhs - re_signed_t<T>(rhs);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> operator/(S lhs, const re_exact_t<T>& rhs) {
-  return re_exact_t<T>(lhs) / rhs;
+re_signed_t<T> operator/(S lhs, const re_signed_t<T>& rhs) {
+  return re_signed_t<T>(lhs) / rhs;
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> operator/(const re_exact_t<T>& lhs, S rhs) {
-  return lhs / re_exact_t<T>(rhs);
+re_signed_t<T> operator/(const re_signed_t<T>& lhs, S rhs) {
+  return lhs / re_signed_t<T>(rhs);
 }
 
 // abs: ∂(abs x)/∂x = sign(x) (exact in IEEE 754)
 template <typename T>
-re_exact_t<T> abs(const re_exact_t<T>& x) {
+re_signed_t<T> abs(const re_signed_t<T>& x) {
   const T sign = (x.val > T(0)) ? T(1) : (x.val < T(0)) ? T(-1) : T(0);
-  return re_exact_t<T>{re_abs(x.val), sign * x.err};
+  return re_signed_t<T>{re_abs(x.val), sign * x.err};
 }
 
 // sqrt: ∂(√x)/∂x = 1/(2√x)
 template <typename T>
-re_exact_t<T> sqrt(const re_exact_t<T>& x) {
+re_signed_t<T> sqrt(const re_signed_t<T>& x) {
   using E = exact_type_t<T>;
   const T new_val = re_sqrt(x.val);
   const E exact_val = re_sqrt(static_cast<E>(x.val));
   const T deriv = 1 / (2 * new_val);
-  return re_exact_t<T>{new_val,
-                       deriv * x.err + local_error(new_val, exact_val)};
+  return re_signed_t<T>{new_val,
+                        deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // log: ∂(ln x)/∂x = 1/x
 template <typename T>
-re_exact_t<T> log(const re_exact_t<T>& x) {
+re_signed_t<T> log(const re_signed_t<T>& x) {
   using E = exact_type_t<T>;
   const T new_val = re_log(x.val);
   const E exact_val = re_log(static_cast<E>(x.val));
   const T deriv = 1 / x.val;
-  return re_exact_t<T>{new_val,
-                       deriv * x.err + local_error(new_val, exact_val)};
+  return re_signed_t<T>{new_val,
+                        deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // sin: ∂(sin x)/∂x = cos(x)
 template <typename T>
-re_exact_t<T> sin(const re_exact_t<T>& x) {
+re_signed_t<T> sin(const re_signed_t<T>& x) {
   using E = exact_type_t<T>;
   const T new_val = re_sin(x.val);
   const E exact_val = re_sin(static_cast<E>(x.val));
   const T deriv = re_cos(x.val);
-  return re_exact_t<T>{new_val,
-                       deriv * x.err + local_error(new_val, exact_val)};
+  return re_signed_t<T>{new_val,
+                        deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // cos: ∂(cos x)/∂x = -sin(x)
 template <typename T>
-re_exact_t<T> cos(const re_exact_t<T>& x) {
+re_signed_t<T> cos(const re_signed_t<T>& x) {
   using E = exact_type_t<T>;
   const T new_val = re_cos(x.val);
   const E exact_val = re_cos(static_cast<E>(x.val));
   const T deriv = -re_sin(x.val);
-  return re_exact_t<T>{new_val,
-                       deriv * x.err + local_error(new_val, exact_val)};
+  return re_signed_t<T>{new_val,
+                        deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // acos: ∂(acos x)/∂x = -1/√(1 - x²)
 template <typename T>
-re_exact_t<T> acos(const re_exact_t<T>& x) {
+re_signed_t<T> acos(const re_signed_t<T>& x) {
   using E = exact_type_t<T>;
   const T new_val = re_acos(x.val);
   const E exact_val = re_acos(static_cast<E>(x.val));
   const T deriv = -1 / re_sqrt(1 - x.val * x.val);
-  return re_exact_t<T>{new_val,
-                       deriv * x.err + local_error(new_val, exact_val)};
+  return re_signed_t<T>{new_val,
+                        deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // tan: ∂(tan x)/∂x = 1/cos²(x) = 1 + tan²(x), rewritten via new_val to avoid
 // a second std::cos call.
 template <typename T>
-re_exact_t<T> tan(const re_exact_t<T>& x) {
+re_signed_t<T> tan(const re_signed_t<T>& x) {
   using E = exact_type_t<T>;
   const T new_val = re_tan(x.val);
   const E exact_val = re_tan(static_cast<E>(x.val));
   const T deriv = 1 + new_val * new_val;
-  return re_exact_t<T>{new_val,
-                       deriv * x.err + local_error(new_val, exact_val)};
+  return re_signed_t<T>{new_val,
+                        deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // atan: ∂(atan x)/∂x = 1/(1 + x²)
 template <typename T>
-re_exact_t<T> atan(const re_exact_t<T>& x) {
+re_signed_t<T> atan(const re_signed_t<T>& x) {
   using E = exact_type_t<T>;
   const T new_val = re_atan(x.val);
   const E exact_val = re_atan(static_cast<E>(x.val));
   const T deriv = 1 / (1 + x.val * x.val);
-  return re_exact_t<T>{new_val,
-                       deriv * x.err + local_error(new_val, exact_val)};
+  return re_signed_t<T>{new_val,
+                        deriv * x.err + local_error(new_val, exact_val)};
 }
 
 // atan2(y, x): ∂/∂y = x/(x²+y²), ∂/∂x = -y/(x²+y²)
 template <typename T>
-re_exact_t<T> atan2(const re_exact_t<T>& y, const re_exact_t<T>& x) {
+re_signed_t<T> atan2(const re_signed_t<T>& y, const re_signed_t<T>& x) {
   using E = exact_type_t<T>;
   const T new_val = re_atan2(y.val, x.val);
   const E exact_val = re_atan2(static_cast<E>(y.val), static_cast<E>(x.val));
   const T d = x.val * x.val + y.val * y.val;
-  return re_exact_t<T>{new_val, (x.val / d) * y.err - (y.val / d) * x.err +
-                                    local_error(new_val, exact_val)};
+  return re_signed_t<T>{new_val, (x.val / d) * y.err - (y.val / d) * x.err +
+                                     local_error(new_val, exact_val)};
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> atan2(const re_exact_t<T>& y, S x) {
-  return atan2(y, re_exact_t<T>(x));
+re_signed_t<T> atan2(const re_signed_t<T>& y, S x) {
+  return atan2(y, re_signed_t<T>(x));
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> atan2(S y, const re_exact_t<T>& x) {
-  return atan2(re_exact_t<T>(y), x);
+re_signed_t<T> atan2(S y, const re_signed_t<T>& x) {
+  return atan2(re_signed_t<T>(y), x);
 }
 
 // fmax / fmin: exact selection of one operand; no rounding is introduced, and
 // the chosen operand's error carries through unchanged.
 template <typename T>
-re_exact_t<T> fmax(const re_exact_t<T>& a, const re_exact_t<T>& b) {
+re_signed_t<T> fmax(const re_signed_t<T>& a, const re_signed_t<T>& b) {
   return (b.val > a.val) ? b : a;
 }
 
 template <typename T>
-re_exact_t<T> fmin(const re_exact_t<T>& a, const re_exact_t<T>& b) {
+re_signed_t<T> fmin(const re_signed_t<T>& a, const re_signed_t<T>& b) {
   return (b.val < a.val) ? b : a;
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> fmax(const re_exact_t<T>& a, S b) {
-  return fmax(a, re_exact_t<T>(b));
+re_signed_t<T> fmax(const re_signed_t<T>& a, S b) {
+  return fmax(a, re_signed_t<T>(b));
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> fmax(S a, const re_exact_t<T>& b) {
-  return fmax(re_exact_t<T>(a), b);
+re_signed_t<T> fmax(S a, const re_signed_t<T>& b) {
+  return fmax(re_signed_t<T>(a), b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> fmin(const re_exact_t<T>& a, S b) {
-  return fmin(a, re_exact_t<T>(b));
+re_signed_t<T> fmin(const re_signed_t<T>& a, S b) {
+  return fmin(a, re_signed_t<T>(b));
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> fmin(S a, const re_exact_t<T>& b) {
-  return fmin(re_exact_t<T>(a), b);
+re_signed_t<T> fmin(S a, const re_signed_t<T>& b) {
+  return fmin(re_signed_t<T>(a), b);
 }
 
 // pow(x, n): ∂(x^n)/∂x = n*x^(n-1)
 template <typename T>
-re_exact_t<T> pow(const re_exact_t<T>& x, T n) {
+re_signed_t<T> pow(const re_signed_t<T>& x, T n) {
   using E = exact_type_t<T>;
   const T new_val = re_pow(x.val, n);
   const E exact_val = re_pow(static_cast<E>(x.val), static_cast<E>(n));
   const T deriv = n * re_pow(x.val, n - 1);
-  return re_exact_t<T>{new_val,
-                       deriv * x.err + local_error(new_val, exact_val)};
+  return re_signed_t<T>{new_val,
+                        deriv * x.err + local_error(new_val, exact_val)};
 }
 
 template <typename T>
-re_exact_t<T> pow(const re_exact_t<T>& x, int n) {
+re_signed_t<T> pow(const re_signed_t<T>& x, int n) {
   return integer_pow(x, n);
 }
 
@@ -945,125 +945,125 @@ T norm(const re_worst_t<T>& x) {
 }
 
 // ---------------------------------------------------------------------------
-// std:: overloads — EXACT mode
+// std:: overloads — SIGNED mode
 // ---------------------------------------------------------------------------
 
 template <typename T>
-using re_exact_t = running_error::re_exact_t<T>;
+using re_signed_t = running_error::re_signed_t<T>;
 
 template <typename T>
-re_exact_t<T> abs(const re_exact_t<T>& x) {
+re_signed_t<T> abs(const re_signed_t<T>& x) {
   return running_error::abs(x);
 }
 
 template <typename T>
-re_exact_t<T> sqrt(const re_exact_t<T>& x) {
+re_signed_t<T> sqrt(const re_signed_t<T>& x) {
   return running_error::sqrt(x);
 }
 
 template <typename T>
-re_exact_t<T> log(const re_exact_t<T>& x) {
+re_signed_t<T> log(const re_signed_t<T>& x) {
   return running_error::log(x);
 }
 
 template <typename T>
-re_exact_t<T> sin(const re_exact_t<T>& x) {
+re_signed_t<T> sin(const re_signed_t<T>& x) {
   return running_error::sin(x);
 }
 
 template <typename T>
-re_exact_t<T> cos(const re_exact_t<T>& x) {
+re_signed_t<T> cos(const re_signed_t<T>& x) {
   return running_error::cos(x);
 }
 
 template <typename T>
-re_exact_t<T> acos(const re_exact_t<T>& x) {
+re_signed_t<T> acos(const re_signed_t<T>& x) {
   return running_error::acos(x);
 }
 
 template <typename T>
-re_exact_t<T> fmax(const re_exact_t<T>& a, const re_exact_t<T>& b) {
+re_signed_t<T> fmax(const re_signed_t<T>& a, const re_signed_t<T>& b) {
   return running_error::fmax(a, b);
 }
 
 template <typename T>
-re_exact_t<T> fmin(const re_exact_t<T>& a, const re_exact_t<T>& b) {
+re_signed_t<T> fmin(const re_signed_t<T>& a, const re_signed_t<T>& b) {
   return running_error::fmin(a, b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> fmax(const re_exact_t<T>& a, S b) {
+re_signed_t<T> fmax(const re_signed_t<T>& a, S b) {
   return running_error::fmax(a, b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> fmax(S a, const re_exact_t<T>& b) {
+re_signed_t<T> fmax(S a, const re_signed_t<T>& b) {
   return running_error::fmax(a, b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> fmin(const re_exact_t<T>& a, S b) {
+re_signed_t<T> fmin(const re_signed_t<T>& a, S b) {
   return running_error::fmin(a, b);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> fmin(S a, const re_exact_t<T>& b) {
+re_signed_t<T> fmin(S a, const re_signed_t<T>& b) {
   return running_error::fmin(a, b);
 }
 
 template <typename T>
-re_exact_t<T> tan(const re_exact_t<T>& x) {
+re_signed_t<T> tan(const re_signed_t<T>& x) {
   return running_error::tan(x);
 }
 
 template <typename T>
-re_exact_t<T> atan(const re_exact_t<T>& x) {
+re_signed_t<T> atan(const re_signed_t<T>& x) {
   return running_error::atan(x);
 }
 
 template <typename T>
-re_exact_t<T> atan2(const re_exact_t<T>& y, const re_exact_t<T>& x) {
+re_signed_t<T> atan2(const re_signed_t<T>& y, const re_signed_t<T>& x) {
   return running_error::atan2(y, x);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> atan2(const re_exact_t<T>& y, S x) {
+re_signed_t<T> atan2(const re_signed_t<T>& y, S x) {
   return running_error::atan2(y, x);
 }
 
 template <typename T, typename S,
           std::enable_if_t<std::is_arithmetic_v<S>, int> = 0>
-re_exact_t<T> atan2(S y, const re_exact_t<T>& x) {
+re_signed_t<T> atan2(S y, const re_signed_t<T>& x) {
   return running_error::atan2(y, x);
 }
 
 template <typename T>
-re_exact_t<T> pow(const re_exact_t<T>& x, T n) {
+re_signed_t<T> pow(const re_signed_t<T>& x, T n) {
   return running_error::pow(x, n);
 }
 
 template <typename T>
-re_exact_t<T> pow(const re_exact_t<T>& x, int n) {
+re_signed_t<T> pow(const re_signed_t<T>& x, int n) {
   return running_error::pow(x, n);
 }
 
 template <typename T>
-T real(const re_exact_t<T>& x) {
+T real(const re_signed_t<T>& x) {
   return x.val;
 }
 
 template <typename T>
-T imag(const re_exact_t<T>&) {
+T imag(const re_signed_t<T>&) {
   return T(0);
 }
 
 template <typename T>
-T norm(const re_exact_t<T>& x) {
+T norm(const re_signed_t<T>& x) {
   return x.val * x.val;
 }
 
