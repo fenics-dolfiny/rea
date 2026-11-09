@@ -1,7 +1,29 @@
-test:
-  image: alpine:edge
+.build-and-test:
+  tags:
+    - zed
   script:
-    - ./install-deps.sh
-    - cmake -S . -B build
+    - cmake -S . -B build -G Ninja
     - cmake --build build
     - ./build/rea_tests
+
+test:alpine:edge:
+  extends: .build-and-test
+  image: alpine:edge
+  parallel:
+    matrix:
+      - CXX: [g++, clang++]
+  before_script:
+    - ./install-deps.sh
+
+test:ubuntu:26:04:
+  extends: .build-and-test
+  image: ubuntu:26.04
+  parallel:
+    matrix:
+      - CXX: [g++-13, g++-14, g++-15, g++-16]
+      - CXX: [clang++-17, clang++-18, clang++-19, clang++-20, clang++-21, clang++-22]
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq --no-install-recommends cmake ninja-build $(echo "$CXX" | sed 's/^clang++-\(.*\)/clang-\1 clang-tools-\1/')
