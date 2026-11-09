@@ -1,10 +1,5 @@
 #pragma once
 
-// std::float16_t and friends, and the <stdfloat> they live in, are C++23.
-#if !defined(__cplusplus) || __cplusplus < 202302L
-#error "running_error.h requires C++23 or newer"
-#endif
-
 #include <cfloat>
 #include <cmath>
 #include <cstdint>
